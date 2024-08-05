@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// root@tcp(localhost:3306)/clases
 func ConnectDB(cfg *config.Config) *sql.DB {
 	connStr := fmt.Sprintf("%s@tcp(%s:%s)/%s",
 		cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName)

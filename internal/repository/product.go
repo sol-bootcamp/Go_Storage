@@ -3,6 +3,7 @@ package repository
 import (
 	"clases/internal/domain"
 	"database/sql"
+	"errors"
 	"log"
 )
 
@@ -56,18 +57,72 @@ func (pr *productRepository) GetAllProducts() ([]domain.Product, error) {
 }
 
 func (pr *productRepository) GetProductByID(id int) (domain.Product, error) {
-	return domain.Product{}, nil
+	row := pr.db.QueryRow("SELECT id, name, count, type, price FROM products WHERE id = ?", id)
+	var product domain.Product
+	err := row.Scan(&product.ID, &product.Name, &product.Count, &product.Type, &product.Price)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Product{}, errors.New("product not found")
+		}
+		return domain.Product{}, err
+	}
+	return product, nil
 
 }
 
 func (pr *productRepository) CreateProduct(product domain.Product) error {
+	result, err := pr.db.Exec("INSERT INTO products (name, count, type, price) VALUES (?, ?, ?, ?)", product.Name, product.Count, product.Type, product.Price)
+	if err != nil {
+		return err
+	}
+	lastId, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+	product.ID = int(lastId)
+
 	return nil
+
 }
 
 func (pr *productRepository) DeleteProduct(id int) error {
+	exist, err := pr.productExists(id)
+	if err != nil {
+		return errors.New("error checking if product exists")
+	}
+	if !exist {
+		return errors.New("product not found")
+	}
+	_, err = pr.db.Exec("DELETE FROM products WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (pr *productRepository) UpdateProduct(id int, product domain.Product) error {
+	exist, err := pr.productExists(id)
+	if err != nil {
+		return errors.New("error checking if product exists")
+	}
+	if !exist {
+		return errors.New("product not found")
+	}
+
+	_, err = pr.db.Exec("UPDATE products SET name = ?, count = ?, type = ?, price = ? WHERE id = ?", product.Name, product.Count, product.Type, product.Price, id)
+	if err != nil {
+		return err
+	}
 	return nil
+
+}
+
+func (pr *productRepository) productExists(id int) (bool, error) {
+	var exist bool
+	query := "SELECT EXISTS(SELECT 1 FROM products WHERE id = ?)"
+	err := pr.db.QueryRow(query, id).Scan(&exist)
+	if err != nil {
+		return false, err
+	}
+	return exist, nil
 }

@@ -48,7 +48,11 @@ func (ps *productService) CreateProduct(product domain.Product) error {
 }
 
 func (ps *productService) DeleteProduct(id int) error {
-	return ps.repository.DeleteProduct(id)
+	err := ps.repository.DeleteProduct(id)
+	if err != nil {
+		return fmt.Errorf("error deleting product: %w", err)
+	}
+	return nil
 }
 
 func (ps *productService) UpdateProduct(id int, product domain.Product) error {
