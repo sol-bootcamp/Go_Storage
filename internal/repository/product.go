@@ -31,7 +31,7 @@ func NewProductRepository(db *sql.DB) ProductRepository {
 }
 
 func (pr *productRepository) GetAllProducts() ([]domain.Product, error) {
-	rows, err := pr.db.Query("SELECT id, name, count,type, price FROM products")
+	rows, err := pr.db.Query("SELECT id, name, count, type, price FROM products")
 	if err != nil {
 		return nil, err
 	}
